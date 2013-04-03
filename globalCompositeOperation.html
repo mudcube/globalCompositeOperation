@@ -1,0 +1,290 @@
+<html>
+  <head>
+    <title>A canvas globalCompositeOperation example</title>
+    <meta name="DC.creator" content="Michael Deal, http://mudcu.be/">
+    <meta name="DC.publisher" content="Mozilla Developer Center, http://developer.mozilla.org">
+    <script type="application/x-javascript" id="script">
+
+var gco = [ // Global Composite Operations
+	'source-over', 'source-in', 'source-out', 'source-atop',
+	'destination-over', 'destination-in', 'destination-out', 'destination-atop',
+	'lighter', 'darker', 'copy', 'xor'
+];
+
+function draw() {	
+	var element = document.getElementsByTagName("canvas")[0];
+	var colorSphere = layer_ColorSphere(element);
+	var additiveLight = layer_AdditiveLight(element);
+	///
+	for(var n = 0, length = gco.length; n < length; n ++) {
+		// draw a line-break every four columns
+		if (n % 4 === 0) document.body.appendChild(document.createElement("br"))
+
+		// display the type of globalCompositeOperation
+		var label = document.createTextNode(gco[n]);
+		document.getElementById('lab' + n).appendChild(label);
+
+		// get the canvas and update the background image
+		var canvas = document.getElementById('tut' + n);
+		canvas.style.background = "url(" + op_8x8.data + ")"; 
+
+		// create the composite for this gco
+		var ctx = canvas.getContext('2d');
+		var width = canvas.width;
+		var height = canvas.height;
+		ctx.drawImage(colorSphere, 0, 0, width, height);
+		ctx.globalCompositeOperation = gco[n];
+		ctx.drawImage(additiveLight, 0, 0, width, height);
+		ctx.globalCompositeOperation = "source-over";
+		ctx.lineWidth = 1.5;
+		ctx.strokeRect(0, 0, width, height);
+		ctx.canvas.onclick = function() {
+			window.location = this.toDataURL();
+		}
+	}
+};
+
+/// Create the "Additive Light" layer (three circles interlacing)
+var layer_AdditiveLight = function(bbox) {
+	var canvas = document.createElement("canvas");
+	var ctx = canvas.getContext("2d");
+	canvas.width = bbox.width;
+	canvas.height = bbox.height;
+	var pi_2 = Math.PI * 2;
+	var radius = 50;
+	ctx.save();
+	ctx.globalCompositeOperation = "lighter";
+	ctx.beginPath();
+	ctx.fillStyle = "rgba(255,0,0,1)";
+	ctx.arc(radius, radius * 2, radius, pi_2, 0, false);
+	ctx.fill()
+	ctx.beginPath();
+	ctx.fillStyle = "rgba(0,0,255,1)";
+	ctx.arc(radius * 2.2, radius * 2, radius, pi_2, 0, false);
+	ctx.fill()
+	ctx.beginPath();
+	ctx.fillStyle = "rgba(0,255,0,1)";
+	ctx.arc(radius * 1.6, radius, radius, pi_2, 0, false);
+	ctx.fill();
+	ctx.restore();
+	// draw the red square
+	ctx.beginPath();
+	ctx.fillStyle = "#f00";
+	ctx.fillRect(0, 0, 16, 16);
+	ctx.fill();
+	return canvas;
+};
+
+/// Create the "Color Sphere" layer (gradient of the spectrum)
+var layer_ColorSphere = function(bbox) {
+	var canvas = document.createElement("canvas");
+	var ctx = canvas.getContext("2d");
+	canvas.width = bbox.width * 2;
+	canvas.height = bbox.height * 2;
+	var radius = 360 / 2;
+	var rotate = (1 / 360) * Math.PI * 2; 
+	var left = -20; // offset left
+	var top = -20; // offset top
+	for (var hue = 0; hue < 360; hue ++) {
+		var gradient = ctx.createLinearGradient(left + radius, top, left + radius, top + radius);
+		gradient.addColorStop(0.1, "hsla("+(hue + 300)+",100%,0%,0)");
+		gradient.addColorStop(0.8, "hsl("+(hue + 300)+", 100%, 50%)");
+		gradient.addColorStop(1, "rgba(255,255,255,1)");
+		ctx.beginPath();
+		ctx.moveTo(left + radius, top);
+		ctx.lineTo(left + radius, top + radius);
+		ctx.lineTo(left + radius + 10, top);
+		ctx.fillStyle = gradient;
+		ctx.fill();
+		ctx.translate(left + radius, top + radius);
+		ctx.rotate(rotate);
+		ctx.translate(-(left + radius), -(top + radius));
+	}
+	// draw the blue square
+	ctx.beginPath();
+	ctx.fillStyle = "#37f";
+	ctx.fillRect(16, 16, 32, 32);
+	ctx.fill();
+	return ctx.canvas;
+};
+
+/// Create a pattern for the backgrounds interlacing grey and white squares.
+var op_8x8 = (function () {
+	var size = 8; // of the squares
+	var color1 = "#fff"; // white
+	var color2 = "#eee"; // grey
+	var proto = document.createElement("canvas").getContext("2d");
+	proto.canvas.width = size * 2;
+	proto.canvas.height = size * 2;
+	proto.fillStyle = color1; // top-left
+	proto.fillRect(0, 0, size, size);
+	proto.fillStyle = color2; // top-right
+	proto.fillRect(size, 0, size, size);
+	proto.fillStyle = color2; // bottom-left
+	proto.fillRect(0, size, size, size);
+	proto.fillStyle = color1; // bottom-right
+	proto.fillRect(size, size, size, size);
+	var pattern = proto.createPattern(proto.canvas, "repeat");
+	pattern.data = proto.canvas.toDataURL();
+	return pattern;
+})();      
+
+    </script>
+    <style type="text/css">
+      body { margin: 20px; font-family: arial,verdana,helvetica; background: #fff;}
+      h1 { font-size: 140%; font-weight:normal; color: #036; border-bottom: 1px solid #ccc; }
+      td { padding: 7px; }
+      label { background: #000; display: block; color: #fff; width: 100%; text-align: center; padding: 5px 0; margin: 0; }
+      pre { float:left; display:block; background: rgb(238,238,238); border: 1px dashed #666; padding: 15px 20px; margin: 15px 0 20px 0; }
+    </style>
+  </head>
+  <body onload="draw(); ">
+    <h1>A canvas <code>globalCompositeOperation</code> example</h1>
+    <div>
+      <table>
+        <tr>
+          <td><canvas id="tut0" width="160" height="150"></canvas><br/><label id="lab0"></label></td>
+          <td><canvas id="tut1" width="160" height="150"></canvas><br/><label id="lab1"></label></td>
+          <td><canvas id="tut2" width="160" height="150"></canvas><br/><label id="lab2"></label></td>
+          <td><canvas id="tut3" width="160" height="150"></canvas><br/><label id="lab3"></label></td>
+        </tr>
+        <tr>
+          <td><canvas id="tut4" width="160" height="150"></canvas><br/><label id="lab4"></label></td>
+          <td><canvas id="tut5" width="160" height="150"></canvas><br/><label id="lab5"></label></td>
+          <td><canvas id="tut6" width="160" height="150"></canvas><br/><label id="lab6"></label></td>
+          <td><canvas id="tut7" width="160" height="150"></canvas><br/><label id="lab7"></label></td>
+        </tr>
+        <tr>
+          <td><canvas id="tut8" width="160" height="150"></canvas><br/><label id="lab8"></label></td>
+          <td><canvas id="tut9" width="160" height="150"></canvas><br/><label id="lab9"></label></td>
+          <td><canvas id="tut10" width="160" height="150"></canvas><br/><label id="lab10"></label></td>
+          <td><canvas id="tut11" width="160" height="150"></canvas><br/><label id="lab11"></label></td>
+        </tr>
+      </table>
+      <pre id="code">
+var gco = [ // Global Composite Operations
+    'source-over', 'source-in', 'source-out', 'source-atop',
+    'destination-over', 'destination-in', 'destination-out', 'destination-atop',
+    'lighter', 'darker', 'copy', 'xor'
+];
+
+function draw() {    
+    var element = document.getElementsByTagName("canvas")[0];
+    var colorSphere = layer_ColorSphere(element);
+    var additiveLight = layer_AdditiveLight(element);
+    ///
+    for(var n = 0, length = gco.length; n < length; n ++) {
+        // draw a line-break every four columns
+        if (n % 4 === 0) document.body.appendChild(document.createElement("br"))
+
+        // display the type of globalCompositeOperation
+        var label = document.createTextNode(gco[n]);
+        document.getElementById('lab' + n).appendChild(label);
+
+        // get the canvas and update the background image
+        var canvas = document.getElementById('tut' + n);
+        canvas.style.background = "url(" + op_8x8.data + ")"; 
+
+        // create the composite for this gco
+        var ctx = canvas.getContext('2d');
+        var width = canvas.width;
+        var height = canvas.height;
+        ctx.drawImage(colorSphere, 0, 0, width, height);
+        ctx.globalCompositeOperation = gco[n];
+        ctx.drawImage(additiveLight, 0, 0, width, height);
+        ctx.globalCompositeOperation = "source-over";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(0, 0, width, height);
+        ctx.canvas.onclick = function() {
+            window.location = this.toDataURL();
+        }
+    }
+};
+
+/// Create the "Additive Light" layer (three circles interlacing)
+var layer_AdditiveLight = function(bbox) {
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+    canvas.width = bbox.width;
+    canvas.height = bbox.height;
+    var pi_2 = Math.PI * 2;
+    var radius = 50;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.beginPath();
+    ctx.fillStyle = "rgba(255,0,0,1)";
+    ctx.arc(radius, radius * 2, radius, pi_2, 0, false);
+    ctx.fill()
+    ctx.beginPath();
+    ctx.fillStyle = "rgba(0,0,255,1)";
+    ctx.arc(radius * 2.2, radius * 2, radius, pi_2, 0, false);
+    ctx.fill()
+    ctx.beginPath();
+    ctx.fillStyle = "rgba(0,255,0,1)";
+    ctx.arc(radius * 1.6, radius, radius, pi_2, 0, false);
+    ctx.fill();
+    ctx.restore();
+    // draw the red square
+    ctx.beginPath();
+    ctx.fillStyle = "#f00";
+    ctx.fillRect(0, 0, 16, 16);
+    ctx.fill();
+    return canvas;
+};
+
+/// Create the "Color Sphere" layer (gradient of the spectrum)
+var layer_ColorSphere = function(bbox) {
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+    canvas.width = bbox.width * 2;
+    canvas.height = bbox.height * 2;
+    var radius = 360 / 2;
+    var rotate = (1 / 360) * Math.PI * 2; 
+    var left = -20; // offset left
+    var top = -20; // offset top
+    for (var hue = 0; hue < 360; hue ++) {
+        var gradient = ctx.createLinearGradient(left + radius, top, left + radius, top + radius);
+        gradient.addColorStop(0.1, "hsla("+(hue + 300)+",100%,0%,0)");
+        gradient.addColorStop(0.8, "hsl("+(hue + 300)+", 100%, 50%)");
+        gradient.addColorStop(1, "rgba(255,255,255,1)");
+        ctx.beginPath();
+        ctx.moveTo(left + radius, top);
+        ctx.lineTo(left + radius, top + radius);
+        ctx.lineTo(left + radius + 10, top);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.translate(left + radius, top + radius);
+        ctx.rotate(rotate);
+        ctx.translate(-(left + radius), -(top + radius));
+    }
+    // draw the blue square
+    ctx.beginPath();
+    ctx.fillStyle = "#37f";
+    ctx.fillRect(16, 16, 32, 32);
+    ctx.fill();
+    return ctx.canvas;
+};
+
+/// Create a pattern for the backgrounds interlacing grey and white squares.
+var op_8x8 = (function () {
+    var size = 8; // of the squares
+    var color1 = "#fff"; // white
+    var color2 = "#eee"; // grey
+    var proto = document.createElement("canvas").getContext("2d");
+    proto.canvas.width = size * 2;
+    proto.canvas.height = size * 2;
+    proto.fillStyle = color1; // top-left
+    proto.fillRect(0, 0, size, size);
+    proto.fillStyle = color2; // top-right
+    proto.fillRect(size, 0, size, size);
+    proto.fillStyle = color2; // bottom-left
+    proto.fillRect(0, size, size, size);
+    proto.fillStyle = color1; // bottom-right
+    proto.fillRect(size, size, size, size);
+    var pattern = proto.createPattern(proto.canvas, "repeat");
+    pattern.data = proto.canvas.toDataURL();
+    return pattern;
+})();</pre>
+    </div>
+  </body>
+</html>
